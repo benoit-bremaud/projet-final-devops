@@ -1,0 +1,84 @@
+# Stack complete : db (MySQL) / api (FastAPI partage) / adminer / webapp (React).
+# Le mot de passe et les identifiants admin sont lus depuis docker-mysql/.env
+# (non versionne). L'api et le webapp se construisent avec le contexte racine du
+# depot (..) pour acceder au backend partage et au front.
+
+# Nom de projet distinct : evite toute collision avec d'autres stacks "docker-mysql"
+# (ex: le TP), qui partageraient sinon conteneurs et volume MySQL.
+name: projet-ind-2-inscription
+
+services:
+  db:
+    build:
+      context: ./db
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+    ports:
+      # Publie sur 3307 cote hote (3306 peut etre pris par un MySQL systeme local)
+      # pour les tests d'integration pytest. En conteneur, l'api vise toujours db:3306.
+      - "3307:3306"
+    volumes:
+      - ./sqlfiles:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "mysql -uroot -p$$MYSQL_ROOT_PASSWORD -e 'SHOW DATABASES;' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  api:
+    build:
+      context: ..
+      dockerfile: docker-mysql/api/Dockerfile
+    restart: always
+    environment:
+      - MYSQL_HOST=db
+      - MYSQL_DATABASE=ynov_ci
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - CORS_ORIGINS=http://localhost:3000
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -o /dev/null -w '%{http_code}' http://localhost:8000/docs | grep -q 200"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      db:
+        condition: service_healthy
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8080/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  webapp:
+    build:
+      context: ..
+      dockerfile: docker-mysql/webapp/Dockerfile
+    restart: always
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s

@@ -1,0 +1,9 @@
+PROJET FINAL DEVOPS — ZERO TOUCH
+================================
+(À compléter en fin de projet — issue #18)
+
+Dépôt GitHub        : https://github.com/benoit-bremaud/projet-final-devops
+IP publique projet  : http://<IP_EC2_APP>:3000   (Frontend)   /   :8000 (API)   /   :8080 (Adminer)
+IP publique registre: https://<IP_EC2_REGISTRE>
+
+Identifiants registre Docker : voir .env.sample (REGISTRY_USERNAME / REGISTRY_PASSWORD)

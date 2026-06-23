@@ -1,0 +1,6 @@
+# Dependances du backend pour le runtime Vercel (@vercel/python).
+# uvicorn n'est pas necessaire : Vercel sert directement l'app ASGI.
+fastapi>=0.110,<1.0
+mysql-connector-python>=8.3
+bcrypt>=4.1
+PyJWT>=2.13.0

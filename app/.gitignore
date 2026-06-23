@@ -1,0 +1,25 @@
+node_modules/
+.env
+.env.local
+.env.*.local
+/build
+/dist
+/coverage
+.vercel
+
+# Front : documentation jsdoc generee (regeneree en CI via npm run jsdoc)
+/public/docs
+
+# Cypress
+cypress/videos/
+cypress/screenshots/
+cypress/downloads/
+
+# Python / backend
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+venv/

@@ -1,0 +1,42 @@
+# Pipeline d'orchestration « Zero Touch » — déclenchement MANUEL (1 clic).
+# SQUELETTE : la logique de chaque étape est à implémenter (cf. issues #10 à #14).
+# Tout en UN SEUL job : le tfstate et les fichiers générés (inventory, key.pem)
+# doivent persister entre les étapes (état local au runner = infra éphémère).
+name: Deploy (Zero Touch)
+
+on:
+  workflow_dispatch:
+
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_DEFAULT_REGION: eu-west-3
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ---------- 1. BUILD & PUSH (issue #10) ----------
+      - name: Login au registre privé
+        run: echo "TODO: docker login ${{ secrets.REGISTRY_HOST }} -u ... -p ... (gérer le certif auto-signé)"
+      - name: Build & push des images (api + webapp)
+        run: echo "TODO: docker build app/ (front + back) puis docker push vers le registre privé"
+
+      # ---------- 2. PROVISION (issue #11) ----------
+      - name: Terraform apply (infra/)
+        run: echo "TODO: terraform -chdir=infra init && terraform -chdir=infra apply -auto-approve"
+
+      # ---------- 3. BRIDGE (issue #12) ----------
+      - name: Générer inventory.ini + key.pem
+        run: echo "TODO: terraform output -raw instance_ip / private_key -> inventory.ini + key.pem (chmod 600)"
+
+      # ---------- 4. DEPLOY (issue #13) ----------
+      - name: Configurer & déployer via Ansible
+        run: echo "TODO: ansible-playbook -i inventory.ini ansible/deploy.yml (login registre, pull, compose up)"
+
+      # ---------- 5. VALIDATE (issue #14) ----------
+      - name: Test post-déploiement (curl)
+        run: echo "TODO: curl http://IP:3000 (front) et http://IP:8000 (api) + afficher l'URL finale"

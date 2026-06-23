@@ -1,0 +1,17 @@
+{
+  "source": {
+    "include": ["src"],
+    "exclude": [
+      "src/index.js",
+      "src/reportWebVitals.js",
+      "src/setupTests.js"
+    ],
+    "includePattern": ".+\\.js(x)?$",
+    "excludePattern": ".+\\.test\\.js(x)?$"
+  },
+  "opts": {
+    "recurse": true,
+    "encoding": "utf8"
+  },
+  "plugins": ["plugins/markdown"]
+}

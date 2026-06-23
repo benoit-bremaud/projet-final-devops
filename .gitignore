@@ -1,0 +1,33 @@
+# === Terraform (l'état contient des secrets en clair : ne JAMAIS versionner) ===
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+
+# === Clés / secrets ===
+*.pem
+key.pem
+.env
+**/.env
+# ...mais on garde les modèles :
+!.env.sample
+!**/.env.example
+
+# === Inventaire Ansible réel (IP réelle) ===
+**/inventory.ini
+
+# === SSL / auth / data générés ===
+**/ssl/
+**/auth/
+**/data/
+
+# === Node / Python / builds ===
+node_modules/
+__pycache__/
+*.pyc
+build/
+dist/
+coverage/
+.vercel/

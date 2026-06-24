@@ -45,14 +45,16 @@ resource "tls_private_key" "pk" {
 # Register the PUBLIC part of the key in AWS so it gets installed on the server.
 # UNIQUE name (distinct from the registry) to avoid any collision.
 resource "aws_key_pair" "generated_key" {
-  key_name   = "inscription-app-key"
-  public_key = tls_private_key.pk.public_key_openssh
+  # name_prefix (not a fixed name): AWS appends a unique suffix per run, so an
+  # ephemeral run never collides with leftovers from a previous run.
+  key_name_prefix = "inscription-app-"
+  public_key      = tls_private_key.pk.public_key_openssh
 }
 
 # 3. Security Group = the firewall. Open ONLY the required ports.
 #    Assignment: "Frontend and API public, the rest private" -> 22 + 3000 + 8000 only.
 resource "aws_security_group" "app_sg" {
-  name        = "inscription-app-sg"
+  name_prefix = "inscription-app-" # unique per run (ephemeral state safe)
   description = "SSH (Ansible) + Front (3000) + API (8000)"
 
   ingress {

@@ -92,15 +92,98 @@ versionnée.
 5. **Penser à détruire** les EC2 applicatives orphelines après les tests (coût Free Tier) ;
    l'EC2 #1 registre, elle, doit **rester** en place.
 
-## 8. Correspondance avec les critères d'évaluation
+## 8. Matrice de conformité au sujet (exigence par exigence)
 
-- **Pipeline verte (1 clic)** → §4, diagramme 02, fichier `.github/workflows/deploy.yml`.
-- **Application accessible via IP** → §1 et §3, validée par l'étape *Validate* (§4.5).
-- **Découpage clair des responsabilités** → §3, structure du dépôt (`registry/`, `infra/`,
-  `ansible/`, `app/`), diagramme 03.
-- **Zéro secret en dur** → §5, diagramme 06, `.env.sample` + `gitleaks`.
+Chaque exigence du sujet (§2 → §8) a été **auditée contre le code réel** du dépôt, puis
+**contre-vérifiée** (relecture sceptique de la preuve citée). Légende :
+**✅ Conforme** · **🟡 Partiel** · **❌ Non conforme**.
 
-## 9. Pistes d'amélioration (honnêteté technique)
+**Synthèse : 30 ✅ · 2 🟡 · 1 ❌** sur 33 exigences.
+
+### §2 — Architecture cible
+
+| Exigence | Statut | Ce qu'on a fait & où (preuve) |
+| --- | :--: | --- |
+| Cloud AWS, région `eu-west-3` | ✅ | `provider "aws" { region = "eu-west-3" }` — `infra/main.tf:22-24`, `registry/main.tf:24-26` |
+| Compute : instance unique, Free Tier | ✅ | Une seule `aws_instance` en `t3.micro` — `infra/main.tf:96-110` (t2.micro refusé sur ce compte, cf. §6) |
+| OS : dernière LTS Ubuntu, dynamique | 🟡 | `data aws_ami` `most_recent`+Canonical mais filtre épinglé `noble-24.04` — `infra/main.tf:28-36`. Dynamique *dans* la 24.04 ; choix de repro (cf. §9) |
+| Exposition stricte des ports | ✅ | Security Group ouvre **uniquement** 22/3000/8000 — `infra/main.tf:60-93` ; le compose prod ne publie que 3000/8000 |
+| Front (3000) + API (8000) publics, reste non | ✅ | Adminer (8080) et MySQL (3306) ni dans le SG ni publiés — `infra/main.tf:84`, `app/docker-mysql/docker-compose.prod.yml` |
+| SSH (22) ouvert **uniquement** pour Ansible | ❌ | Port 22 ouvert à `0.0.0.0/0` — `infra/main.tf:60-66` : restriction seulement *descriptive*, aucun contrôle réseau. **À corriger** (cf. §9) |
+| Stack Compose tirée du registre privé | ✅ | `image: ${REGISTRY_HOST}/...` (aucun `build:`) — `docker-compose.prod.yml:29,57` |
+
+### §3.1 — Infrastructure as Code (Terraform)
+
+| Exigence | Statut | Ce qu'on a fait & où (preuve) |
+| --- | :--: | --- |
+| AMI non hardcodée (data source) | ✅ | `ami = data.aws_ami.ubuntu.id`, aucun `ami-xxxx` — `infra/main.tf:28-36,97` |
+| Clé SSH générée à la volée | ✅ | `tls_private_key` RSA 4096 — `infra/main.tf:40-52` ; `*.pem` gitignorés, rien de versionné |
+| Outputs IP publique + clé privée | ✅ | `instance_public_ip` + `ssh_private_key` (sensitive) — `infra/main.tf:114-123`, lus en `deploy.yml:68,70` |
+
+### §3.2 — Configuration Management (Ansible)
+
+| Exigence | Statut | Ce qu'on a fait & où (preuve) |
+| --- | :--: | --- |
+| Install runtime Docker + dépendances | ✅ | apt `docker.io` + `docker-compose-v2` — `ansible/deploy.yml:39-45` |
+| Authentification au registre (sans fuite) | ✅ | `docker login --password-stdin` + `no_log: true` — `ansible/deploy.yml:61-67` |
+| Transfert + démarrage de la stack | ✅ | Copie compose+SQL+`.env` (0600) puis `compose pull`/`up -d` — `ansible/deploy.yml:78-116` |
+| Inventaire généré, aucune IP versionnée | ✅ | `inventory.ini` généré au Bridge — `deploy.yml:66-73` ; `**/inventory.ini` gitignoré |
+
+### §3.3 / §6 — Pipeline d'orchestration (GitHub Actions)
+
+| Exigence | Statut | Ce qu'on a fait & où (preuve) |
+| --- | :--: | --- |
+| Workflow unique `deploy.yml`, `workflow_dispatch` | ✅ | `deploy.yml:5-8`, job unique `deploy` |
+| Build & Push (front + back) → registre | ✅ | Build api+webapp, push SHA+`latest` — `deploy.yml:44-52` |
+| Provisioning Terraform 2e EC2 | ✅ | `terraform -chdir=infra init && apply` — `deploy.yml:60-63` |
+| Bridge : outputs → `inventory.ini` + `key.pem` (chmod 600) | ✅ | `deploy.yml:66-73` |
+| Configuration & Deployment Ansible | ✅ | `ansible-playbook -i inventory.ini` + extra-vars — `deploy.yml:89-101` |
+| Validation `curl` front+back **hors Ansible** | ✅ | Étape `Validate` séparée, `exit 1` si KO — `deploy.yml:104-119` |
+
+### §4 — Contraintes de réalisation
+
+| Exigence | Statut | Ce qu'on a fait & où (preuve) |
+| --- | :--: | --- |
+| Aucun secret en clair (code/logs) | ✅ | `no_log`, stdin, output `sensitive` — `ansible/deploy.yml:67,103`, `infra/main.tf:119-123` |
+| Environnement éphémère (tfstate local) | ✅ | Aucun backend distant ; anti-collision `name_prefix`/`key_name_prefix` — `infra/main.tf:50,57` |
+| Compose dev → prod (pull, pas build) | ✅ | Variante prod remplace `build:` par `image:` — `docker-compose.prod.yml` |
+| GitHub Secrets **exclusifs** | ✅ | Tous via `${{ secrets.* }}` — `deploy.yml:11-24` ; `.env.sample` = placeholders |
+| Registre EC2 distincte : Nginx + SSL + auth | ✅ | EC2 dédiée, Nginx 443 SSL, htpasswd **bcrypt** — `registry/nginx.conf:5-9`, `registry/playbook.yml:46-67` |
+| Dockerfile front + Dockerfile back | ✅ | `app/docker-mysql/{api,webapp}/Dockerfile` |
+
+### §7 — Critères d'évaluation (les 3 décisifs)
+
+| Critère | Statut | Ce qu'on a fait & où (preuve) |
+| --- | :--: | --- |
+| 1. Pipeline vert de bout en bout | ✅ | Runs `success` (`workflow_dispatch`), dernier 24/06 en 5 min 32 s |
+| 2. Application accessible via l'URL | 🟡 | Mécanisme en place (étape `Validate` + URL dans `STEP_SUMMARY`) mais l'EC2 app **éphémère est détruite** → IP de `rendu.txt` périmée. **Re-déployer juste avant le rendu** (cf. §9) |
+| 3. Qualité du code : découpage clair | ✅ | `registry/` `infra/` `ansible/` `.github/` — `README.md:32-38` |
+
+### §8 — Livrables
+
+| Exigence | Statut | Ce qu'on a fait & où (preuve) |
+| --- | :--: | --- |
+| `rendu.txt` (repo + IP app + IP registre) | ✅ | `rendu.txt:5-7` — ⚠️ IP app à rafraîchir au dernier déploiement (lié au critère 2) |
+| Documentation globale d'architecture | ✅ | `docs/architecture/README.md`, ce compte-rendu, diagramme 03 |
+| `.env.sample` (secrets + user/pass registre) | ✅ | 11 secrets + `REGISTRY_USERNAME/PASSWORD` — `.env.sample` |
+| Aucune clé AWS réelle livrée | ✅ | Placeholders only ; historique git vérifié (0 clé `AKIA`/`BEGIN PRIVATE KEY`) |
+
+## 9. Pistes d'amélioration & plan de remédiation
+
+**Écarts identifiés par l'audit (à traiter pour viser le sans-faute) :**
+
+- **❌ R6 — SSH ouvert à tout Internet.** Restreindre l'ingress `22` du Security Group à la
+  **source du runner** : variable Terraform `ssh_ingress_cidr` (défaut `0.0.0.0/0` en local),
+  surchargée dans le pipeline par `-var "ssh_ingress_cidr=$(curl -s https://api.ipify.org)/32"`.
+  La connexion SSH devient alors techniquement réservée à l'outil de configuration.
+- **🟡 R3 — AMI épinglée sur 24.04.** Choix volontaire de **reproductibilité** (un build figé
+  reste rejouable à l'identique). Pour suivre automatiquement la prochaine LTS, élargir le filtre
+  et trier sur la date de publication — au prix d'un comportement non déterministe.
+- **🟡 R32 / R34 — IP applicative périmée.** L'infra app étant éphémère, **relancer le pipeline
+  juste avant la soumission** et reporter l'IP fraîche affichée par l'étape `Validate` dans
+  `rendu.txt`. C'est l'étape finale de mise au propre du rendu.
+
+**Améliorations de fond (au-delà du barème) :**
 
 - Remplacer l'`insecure-registries` (certificat auto-signé) par une **vraie autorité de
   certification** (Let's Encrypt) pour supprimer la confiance forcée côté Docker.

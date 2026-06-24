@@ -11,8 +11,11 @@ WORKDIR /app
 ENV BROWSER=none
 # Placeholder baked into the bundle; replaced at container start.
 ENV REACT_APP_API_URL=__API_URL__
-COPY package.json ./
-RUN npm install --omit=dev --silent
+# Override package.json "homepage": serve assets from / (nginx root), not from
+# the GitHub Pages sub-path, otherwise the browser 404s the JS/CSS bundle.
+ENV PUBLIC_URL=/
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev --silent
 COPY public ./public
 COPY src ./src
 RUN npm run build

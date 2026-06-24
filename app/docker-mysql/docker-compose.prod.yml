@@ -16,7 +16,7 @@ services:
       - MYSQL_DATABASE=${MYSQL_DATABASE}
     volumes:
       - db-data:/var/lib/mysql
-      - ./sqlfiles:/docker-entrypoint-initdb.d
+      - ./sqlfiles:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "mysql -uroot -p$$MYSQL_ROOT_PASSWORD -e 'SHOW DATABASES;' || exit 1"]
       interval: 10s
@@ -50,9 +50,9 @@ services:
       retries: 5
       start_period: 30s
 
-  # React frontend — pulled from the private registry. Public on :3000.
-  # REACT_APP_API_URL is injected HERE at runtime (Option A): it points to the
-  # EC2 public IP, known only at deploy time (set by Ansible via .env).
+  # React frontend (static nginx build) — pulled from the private registry. Public on :3000.
+  # REACT_APP_API_URL is injected at runtime: the image entrypoint substitutes the
+  # build-time placeholder with this value (EC2 public IP, known only at deploy time).
   webapp:
     image: ${REGISTRY_HOST}/inscription-webapp:${TAG:-latest}
     restart: always

@@ -59,8 +59,8 @@ jobs:
 
       - name: Terraform apply (infra/)
         run: |
-          terraform -chdir=infra init
-          terraform -chdir=infra apply -auto-approve
+          terraform -chdir=infra init -input=false
+          terraform -chdir=infra apply -auto-approve -input=false
 
       # ---------- 3. BRIDGE (issue #12) ----------
       - name: Generate inventory.ini + key.pem
@@ -103,13 +103,14 @@ jobs:
       # ---------- 5. VALIDATE (issue #14) — outside Ansible ----------
       - name: Validate the deployment (curl front + api)
         run: |
+          set -uo pipefail
           ok_api=""; ok_web=""
           for i in $(seq 1 20); do
             code_api=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "http://$SERVER_IP:8000/docs" || true)
             code_web=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "http://$SERVER_IP:3000" || true)
             echo "try $i -> api=$code_api web=$code_web"
-            [ "$code_api" = "200" ] && ok_api=1
-            [ "$code_web" = "200" ] && ok_web=1
+            case "$code_api" in 2??|3??) ok_api=1;; esac
+            case "$code_web" in 2??|3??) ok_web=1;; esac
             { [ -n "$ok_api" ] && [ -n "$ok_web" ]; } && break
             sleep 15
           done

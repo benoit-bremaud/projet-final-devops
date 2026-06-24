@@ -1,31 +1,28 @@
-# Front-end React image (CRA). Build context = app/ root (see compose),
-# to reach package.json, public/ and src/.
-FROM node:20
+# Front-end React image — Option B: optimized STATIC build served by nginx.
+# Build context = app/ root (see compose), to reach package.json, public/ and src/.
+#
+# REACT_APP_API_URL is build-time in CRA, but the EC2 IP is only known at deploy.
+# Trick: bake a placeholder (__API_URL__) at build time, then substitute the real
+# URL at container START via entrypoint.sh (runtime config, no rebuild needed).
 
+# --- Stage 1: build the static bundle ---
+FROM node:20 AS build
 WORKDIR /app
-ENV PATH=/app/node_modules/.bin:$PATH
-# Prevent react-scripts from opening a browser inside the container.
 ENV BROWSER=none
-
-# Option A (runtime injection via the dev server). Accessing the CRA dev server
-# through the EC2 public IP would otherwise fail:
-#  - HOST=0.0.0.0                      -> bind on all interfaces
-#  - DANGEROUSLY_DISABLE_HOST_CHECK    -> accept a Host header != localhost
-#                                         (avoids "Invalid Host header")
-#  - WDS_SOCKET_PORT=0                 -> avoid the HMR websocket failing behind a public IP
-# REACT_APP_API_URL is NOT baked here: it is injected at RUNTIME by the prod
-# compose (set to http://<instance_public_ip>:8000 by Ansible at deploy time).
-ENV HOST=0.0.0.0
-ENV DANGEROUSLY_DISABLE_HOST_CHECK=true
-ENV WDS_SOCKET_PORT=0
-
-# Runtime deps are enough for `npm start` (no cypress/jsdoc).
+# Placeholder baked into the bundle; replaced at container start.
+ENV REACT_APP_API_URL=__API_URL__
 COPY package.json ./
 RUN npm install --omit=dev --silent
-
 COPY public ./public
 COPY src ./src
+RUN npm run build
 
+# --- Stage 2: serve the static files with nginx on port 3000 ---
+FROM nginx:alpine
+COPY --from=build /app/build /usr/share/nginx/html
+# nginx: listen on 3000, SPA fallback to index.html (client-side routing).
+RUN printf 'server {\n  listen 3000;\n  root /usr/share/nginx/html;\n  location / {\n    try_files $uri /index.html;\n  }\n}\n' > /etc/nginx/conf.d/default.conf
+COPY docker-mysql/webapp/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 EXPOSE 3000
-
-CMD ["npm", "start"]
+ENTRYPOINT ["/entrypoint.sh"]

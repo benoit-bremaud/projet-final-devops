@@ -36,7 +36,7 @@
 
 ## 4. Compute & réseau (Security Group de l'EC2 app)
 
-- **Type d'instance** : `t2.micro` (le type **Free Tier** en eu-west-3 ; `t3.micro` n'est PAS Free Tier ici).
+- **Type d'instance** : `t3.micro` (le type **Free Tier éligible pour CE compte AWS** ; `t2.micro` est refusé à l'`apply` — vérifié en live).
 - **Ports ouverts** (publics) : `22` (Ansible), `3000` (Frontend), `8000` (API).
 - **Ports fermés** (jamais exposés) : `8080` (Adminer), `3306` (MySQL). → conforme à
   « Frontend et API publics, le reste non » (sujet §2).

@@ -93,7 +93,7 @@ resource "aws_security_group" "app_sg" {
 # 4. The EC2 instance = the server itself.
 resource "aws_instance" "app_server" {
   ami                    = data.aws_ami.ubuntu.id # the Ubuntu found in block 1
-  instance_type          = "t2.micro"             # Free Tier eligible (t2.micro in eu-west-3, not t3)
+  instance_type          = "t3.micro"             # Free Tier eligible on THIS account (t2.micro is rejected here)
   key_name               = aws_key_pair.generated_key.key_name
   vpc_security_group_ids = [aws_security_group.app_sg.id]
 

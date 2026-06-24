@@ -13,6 +13,28 @@
     project_dir: /home/ubuntu/inscription-stack
 
   tasks:
+    # 0. Small instances (1 GB RAM) need swap so the React dev server + MySQL fit.
+    - name: Check whether swap is already enabled
+      ansible.builtin.command: swapon --show
+      register: swap_status
+      changed_when: false
+
+    - name: Create and enable a 2G swap file
+      when: "'/swapfile' not in swap_status.stdout"
+      block:
+        - name: Allocate the swap file
+          ansible.builtin.command: fallocate -l 2G /swapfile
+          args:
+            creates: /swapfile
+        - name: Secure the swap file
+          ansible.builtin.file:
+            path: /swapfile
+            mode: "0600"
+        - name: Format the swap area
+          ansible.builtin.command: mkswap /swapfile
+        - name: Enable the swap file
+          ansible.builtin.command: swapon /swapfile
+
     # 1. Install the Docker runtime + the compose plugin.
     - name: Install Docker and the compose plugin
       ansible.builtin.apt:

@@ -88,7 +88,7 @@ resource "aws_security_group" "registry_sg" {
 # 4. Instance EC2
 resource "aws_instance" "registry_server" {
   ami           = data.aws_ami.ubuntu.id
-  instance_type = "t3.micro"
+  instance_type = "t2.micro" # Free Tier eligible (t2.micro in eu-west-3, not t3)
   key_name      = aws_key_pair.generated_key.key_name
 
   vpc_security_group_ids = [aws_security_group.registry_sg.id]

@@ -1,0 +1,72 @@
+# Production stack run on the EC2 application server.
+# Unlike docker-compose.yml (dev), api and webapp are PULLED from the private
+# registry (image:) instead of being built locally (build:).
+# All values come from a .env file written by Ansible at deploy time
+# (REGISTRY_HOST, TAG, secrets, APP_PUBLIC_IP). Nothing is hardcoded here.
+name: inscription-prod
+
+services:
+  # MySQL database — internal only (no published port): "le reste non".
+  # Official image; SQL migrations are run on first init from ./sqlfiles.
+  db:
+    image: mysql:9.7
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+    volumes:
+      - db-data:/var/lib/mysql
+      - ./sqlfiles:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "mysql -uroot -p$$MYSQL_ROOT_PASSWORD -e 'SHOW DATABASES;' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # FastAPI backend — pulled from the private registry. Public on :8000.
+  api:
+    image: ${REGISTRY_HOST}/inscription-api:${TAG:-latest}
+    restart: always
+    environment:
+      - MYSQL_HOST=db
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      # Allow the public front origin to call the API (CORS).
+      - CORS_ORIGINS=http://${APP_PUBLIC_IP}:3000
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -o /dev/null -w '%{http_code}' http://localhost:8000/docs | grep -q 200"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # React frontend — pulled from the private registry. Public on :3000.
+  # REACT_APP_API_URL is injected HERE at runtime (Option A): it points to the
+  # EC2 public IP, known only at deploy time (set by Ansible via .env).
+  webapp:
+    image: ${REGISTRY_HOST}/inscription-webapp:${TAG:-latest}
+    restart: always
+    environment:
+      - REACT_APP_API_URL=http://${APP_PUBLIC_IP}:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+  # Adminer (DB UI) — internal only (no published port): "le reste non".
+  adminer:
+    image: adminer
+    restart: always
+
+volumes:
+  db-data:

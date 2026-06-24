@@ -35,7 +35,7 @@ Deux serveurs AWS, deux rôles bien séparés (détail : diagramme
 [03 — composants](architecture/diagrams/zero-touch/03-component.md)) :
 
 | | EC2 #1 — Registre | EC2 #2 — Application |
-|---|---|---|
+| --- | --- | --- |
 | **Rôle** | **stocke** les images Docker | **exécute** la stack applicative |
 | **Durée de vie** | **persistant** (gardé entre les déploiements) | **éphémère** (recréé à chaque run) |
 | **Exposé au public** | `443` (HTTPS, via Nginx) | `3000` (front) + `8000` (API) |
@@ -73,7 +73,7 @@ versionnée.
 ## 6. Décisions & pièges rencontrés (le cœur du retour d'expérience)
 
 | Problème rencontré | Cause réelle | Solution retenue |
-|---|---|---|
+| --- | --- | --- |
 | `t2.micro` **refusé** à l'`apply` (« not eligible for Free Tier ») | Sur **ce compte AWS précis**, le type Free Tier éligible est `t3.micro`, pas `t2.micro` — contre-intuitif et contraire à la doc générale | Passé toute l'infra en **`t3.micro`** (vérifié en live : le registre tourne dessus). Leçon : *la réalité du compte prime sur la doc*. |
 | Déploiement **bloqué** « Start the stack », SSH injoignable | EC2 `t3.micro` = **1 Go de RAM** ; `npm start` (webpack ~700 Mo) + MySQL saturent la mémoire | Ajout d'un **fichier swap de 2 Go** dans le playbook Ansible. A servi de justification concrète au passage en Option B. |
 | Front lourd et fragile au démarrage | Servir un **dev-server** (`npm start`) en production est un anti-pattern (lent, host-check à désactiver) | **Option A** (`npm start`) d'abord pour valider la chaîne, puis **Option B** : build **statique** servi par **nginx** (image multi-stage, démarrage rapide, surface réduite). |
@@ -98,7 +98,7 @@ Chaque exigence du sujet (§2 → §8) a été **auditée contre le code réel**
 **contre-vérifiée** (relecture sceptique de la preuve citée). Légende :
 **✅ Conforme** · **🟡 Partiel** · **❌ Non conforme**.
 
-**Synthèse : 30 ✅ · 2 🟡 · 1 ❌** sur 33 exigences.
+**Synthèse : 31 ✅ · 2 🟡 · 0 ❌** sur 33 exigences.
 
 ### §2 — Architecture cible
 
@@ -109,7 +109,7 @@ Chaque exigence du sujet (§2 → §8) a été **auditée contre le code réel**
 | OS : dernière LTS Ubuntu, dynamique | 🟡 | `data aws_ami` `most_recent`+Canonical mais filtre épinglé `noble-24.04` — `infra/main.tf:28-36`. Dynamique *dans* la 24.04 ; choix de repro (cf. §9) |
 | Exposition stricte des ports | ✅ | Security Group ouvre **uniquement** 22/3000/8000 — `infra/main.tf:60-93` ; le compose prod ne publie que 3000/8000 |
 | Front (3000) + API (8000) publics, reste non | ✅ | Adminer (8080) et MySQL (3306) ni dans le SG ni publiés — `infra/main.tf:84`, `app/docker-mysql/docker-compose.prod.yml` |
-| SSH (22) ouvert **uniquement** pour Ansible | ❌ | Port 22 ouvert à `0.0.0.0/0` — `infra/main.tf:60-66` : restriction seulement *descriptive*, aucun contrôle réseau. **À corriger** (cf. §9) |
+| SSH (22) ouvert **uniquement** pour Ansible | ✅ | Ingress 22 restreint à `var.ssh_ingress_cidr` — `infra/main.tf` ; le pipeline le surcharge avec l'IP du runner `/32` (`deploy.yml`, étape *Terraform apply*) → port 22 réservé à l'étape Ansible |
 | Stack Compose tirée du registre privé | ✅ | `image: ${REGISTRY_HOST}/...` (aucun `build:`) — `docker-compose.prod.yml:29,57` |
 
 ### §3.1 — Infrastructure as Code (Terraform)
@@ -172,10 +172,10 @@ Chaque exigence du sujet (§2 → §8) a été **auditée contre le code réel**
 
 **Écarts identifiés par l'audit (à traiter pour viser le sans-faute) :**
 
-- **❌ R6 — SSH ouvert à tout Internet.** Restreindre l'ingress `22` du Security Group à la
-  **source du runner** : variable Terraform `ssh_ingress_cidr` (défaut `0.0.0.0/0` en local),
-  surchargée dans le pipeline par `-var "ssh_ingress_cidr=$(curl -s https://api.ipify.org)/32"`.
-  La connexion SSH devient alors techniquement réservée à l'outil de configuration.
+- **✅ R6 — corrigé.** L'ingress `22` est désormais restreint à `var.ssh_ingress_cidr`
+  (`infra/main.tf`), surchargé dans le pipeline par l'IP du runner `/32`
+  (`deploy.yml`, étape *Terraform apply*) : le port SSH n'est plus accessible qu'à l'étape
+  Ansible. Validé localement (`terraform validate`) ; prouvé en réel au prochain déploiement.
 - **🟡 R3 — AMI épinglée sur 24.04.** Choix volontaire de **reproductibilité** (un build figé
   reste rejouable à l'identique). Pour suivre automatiquement la prochaine LTS, élargir le filtre
   et trier sur la date de publication — au prix d'un comportement non déterministe.

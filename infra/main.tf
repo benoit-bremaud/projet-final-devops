@@ -23,6 +23,16 @@ provider "aws" {
   region = "eu-west-3" # Paris (region required by the assignment)
 }
 
+# Source CIDR allowed to reach SSH (port 22). Default is permissive so a LOCAL
+# `plan`/`apply` still works; the pipeline overrides it with the runner's own
+# IP (/32), so in CI port 22 is reachable ONLY by the Ansible step (§2: "SSH
+# open only for the configuration tool").
+variable "ssh_ingress_cidr" {
+  description = "CIDR allowed for SSH ingress (port 22). CI passes <runner_ip>/32."
+  type        = string
+  default     = "0.0.0.0/0"
+}
+
 # 1. Latest Ubuntu 24.04 LTS AMI - DYNAMIC lookup (no hardcoded ID).
 #    Assignment constraint #1: the AMI must not be hardcoded.
 data "aws_ami" "ubuntu" {
@@ -58,11 +68,13 @@ resource "aws_security_group" "app_sg" {
   description = "SSH (Ansible) + Front (3000) + API (8000)"
 
   ingress {
-    description = "SSH - reserved for Ansible (configuration tool)"
+    description = "SSH - restricted to the CI runner (Ansible configuration tool)"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    # In CI this is the runner's IP/32 (passed by the pipeline): port 22 is then
+    # reachable ONLY by the Ansible step, not the whole internet (assignment §2).
+    cidr_blocks = [var.ssh_ingress_cidr]
   }
 
   ingress {

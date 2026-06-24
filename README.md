@@ -8,7 +8,7 @@ déclenchée en **un clic** (`workflow_dispatch`).
 > le configurer. Terraform provisionne, Ansible configure, la pipeline orchestre.
 > **Zéro secret en dur** : tout passe par les **GitHub Secrets**.
 
-Master 2 Expert — CI/CD · Rendu : **06/07/2026** · Binôme : `benoit-bremaud` & `Beehnood`.
+Master 2 Expert — CI/CD · Rendu : **06/07/2026** · Réalisé par : `benoit-bremaud` (solo).
 
 ## Architecture cible
 
@@ -29,8 +29,8 @@ Master 2 Expert — CI/CD · Rendu : **06/07/2026** · Binôme : `benoit-bremaud
 | --- | --- | --- |
 | `registry/` | EC2 #1 — registre Docker privé sécurisé (Terraform + Ansible) | benoit-bremaud |
 | `infra/` | EC2 #2 — Terraform de l'application (AMI dynamique, clé générée, outputs) | benoit-bremaud |
-| `ansible/` | Playbook applicatif (Docker, login registre, pull, `compose up`) | Beehnood |
-| `app/` | Code applicatif (front + back + db) à builder en CI | Beehnood |
+| `ansible/` | Playbook applicatif (Docker, login registre, pull, `compose up`) | benoit-bremaud |
+| `app/` | Code applicatif (front + back + db) à builder en CI | benoit-bremaud |
 | `.github/workflows/deploy.yml` | Pipeline d'orchestration | benoit-bremaud |
 
 ## Le pipeline `deploy.yml` (5 étapes, séquentielles)
@@ -57,6 +57,5 @@ Master 2 Expert — CI/CD · Rendu : **06/07/2026** · Binôme : `benoit-bremaud
 
 ## Équipe & suivi
 
-- **`benoit-bremaud`** — Infrastructure & Orchestration (registry, infra, pipeline, secrets).
-- **`Beehnood`** — Application & Configuration (app, Ansible, doc).
+- **`benoit-bremaud`** — projet réalisé en solo (registry, infra, pipeline, app, Ansible, secrets, doc).
 - Le travail est suivi via les **Issues GitHub** (labels `phase:*`, `priority:*`, milestone du 06/07).

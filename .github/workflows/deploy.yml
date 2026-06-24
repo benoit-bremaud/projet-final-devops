@@ -21,22 +21,28 @@ jobs:
 
       # ---------- 1. BUILD & PUSH (issue #10) ----------
       - name: Login au registre privé
-        run: echo "TODO: docker login ${{ secrets.REGISTRY_HOST }} -u ... -p ... (gérer le certif auto-signé)"
+        run: |
+          echo "TODO: docker login \$REGISTRY_HOST -u ... -p ... (gerer le certif auto-signe)"
       - name: Build & push des images (api + webapp)
-        run: echo "TODO: docker build app/ (front + back) puis docker push vers le registre privé"
+        run: |
+          echo "TODO: docker build app/ (front + back) puis docker push vers le registre prive"
 
       # ---------- 2. PROVISION (issue #11) ----------
       - name: Terraform apply (infra/)
-        run: echo "TODO: terraform -chdir=infra init && terraform -chdir=infra apply -auto-approve"
+        run: |
+          echo "TODO: terraform -chdir=infra init && terraform -chdir=infra apply -auto-approve"
 
       # ---------- 3. BRIDGE (issue #12) ----------
       - name: Générer inventory.ini + key.pem
-        run: echo "TODO: terraform output -raw instance_ip / private_key -> inventory.ini + key.pem (chmod 600)"
+        run: |
+          echo "TODO: terraform -chdir=infra output -raw instance_public_ip / ssh_private_key -> inventory.ini + key.pem (chmod 600)"
 
       # ---------- 4. DEPLOY (issue #13) ----------
       - name: Configurer & déployer via Ansible
-        run: echo "TODO: ansible-playbook -i inventory.ini ansible/deploy.yml (login registre, pull, compose up)"
+        run: |
+          echo "TODO: ansible-playbook -i inventory.ini ansible/deploy.yml (login registre, pull, compose up)"
 
       # ---------- 5. VALIDATE (issue #14) ----------
       - name: Test post-déploiement (curl)
-        run: echo "TODO: curl http://IP:3000 (front) et http://IP:8000 (api) + afficher l'URL finale"
+        run: |
+          echo "TODO: curl http://IP:3000 (front) et http://IP:8000 (api) + afficher URL finale"

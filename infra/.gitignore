@@ -1,0 +1,6 @@
+# SÉCURITÉ : ne JAMAIS versionner ces fichiers.
+# Le fichier d'état Terraform (.tfstate) contient la clé privée SSH EN CLAIR.
+*.tfstate
+*.tfstate.*
+.terraform/
+*.pem

@@ -33,7 +33,7 @@ flowchart TB
       NGINX --> UIR
     end
     subgraph EC2A ["EC2 #2 - Application (ephemere)"]
-      WEB["webapp React port 3000"]
+      WEB["webapp React (build statique nginx) port 3000"]
       API["api FastAPI port 8000"]
       DB["MySQL interne port 3306"]
       ADM["Adminer interne port 8080"]

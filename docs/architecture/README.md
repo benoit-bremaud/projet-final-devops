@@ -4,6 +4,9 @@
 > **Sujet** : `Projet_Final_DevOps.pdf` (non versionné).
 > **Langue** : cette étude de conception est rédigée en **français** (convention des
 > livrables de cours, cf. `CLAUDE.md`). Le **code** reste en anglais.
+>
+> 📖 **Pour le récit pédagogique** (résultat, décisions, pièges, relance) :
+> voir le [compte-rendu](../COMPTE-RENDU.md). Ce README-ci est la **vue structurelle** (diagrammes).
 
 ## But du TP
 

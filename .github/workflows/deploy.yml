@@ -60,7 +60,11 @@ jobs:
       - name: Terraform apply (infra/)
         run: |
           terraform -chdir=infra init -input=false
-          terraform -chdir=infra apply -auto-approve -input=false
+          # Restrict SSH (port 22) to THIS runner's public IP only, so the port
+          # is reachable strictly by the Ansible step below (assignment §2).
+          RUNNER_IP=$(curl -fsS https://api.ipify.org)
+          terraform -chdir=infra apply -auto-approve -input=false \
+            -var "ssh_ingress_cidr=${RUNNER_IP}/32"
 
       # ---------- 3. BRIDGE (issue #12) ----------
       - name: Generate inventory.ini + key.pem

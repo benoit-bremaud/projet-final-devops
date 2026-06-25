@@ -7,3 +7,4 @@ IP publique projet  : http://13.39.19.174:3000   (Frontend)   /   http://13.39.1
 IP publique registre: https://35.180.156.19
 
 Identifiants registre Docker : voir .env.sample (REGISTRY_USERNAME / REGISTRY_PASSWORD)
+Documentation d'architecture : DOC_ARCHITECTURE.md

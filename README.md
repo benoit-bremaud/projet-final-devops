@@ -10,9 +10,9 @@ déclenchée en **un clic** (`workflow_dispatch`).
 
 Master 2 Expert — CI/CD · Rendu : **06/07/2026** · Réalisé par : `benoit-bremaud` (solo).
 
-> 📖 **Documentation** : [compte-rendu pédagogique](docs/COMPTE-RENDU.md) (récit, décisions,
-> pièges, relance) · [vue structurelle + diagrammes UML](docs/architecture/README.md) ·
-> [contrat d'interface](docs/CONVENTIONS.md).
+> 📖 **Documentation** : [**documentation d'architecture**](DOC_ARCHITECTURE.md) (livrable §8 — les 2 EC2)
+> · [compte-rendu pédagogique](docs/COMPTE-RENDU.md) (récit, décisions, pièges, matrice de conformité)
+> · [diagrammes UML détaillés](docs/architecture/) · [contrat d'interface](docs/CONVENTIONS.md).
 
 ## Architecture cible
 

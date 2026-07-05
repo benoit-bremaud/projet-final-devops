@@ -98,7 +98,7 @@ Chaque exigence du sujet (§2 → §8) a été **auditée contre le code réel**
 **contre-vérifiée** (relecture sceptique de la preuve citée). Légende :
 **✅ Conforme** · **🟡 Partiel** · **❌ Non conforme**.
 
-**Synthèse : 31 ✅ · 2 🟡 · 0 ❌** sur 33 exigences.
+**Synthèse : 32 ✅ · 1 🟡 · 0 ❌** sur 33 exigences.
 
 ### §2 — Architecture cible
 
@@ -156,14 +156,14 @@ Chaque exigence du sujet (§2 → §8) a été **auditée contre le code réel**
 | Critère | Statut | Ce qu'on a fait & où (preuve) |
 | --- | :--: | --- |
 | 1. Pipeline vert de bout en bout | ✅ | Runs `success` (`workflow_dispatch`), dernier 24/06 en 5 min 32 s |
-| 2. Application accessible via l'URL | 🟡 | Mécanisme en place (étape `Validate` + URL dans `STEP_SUMMARY`) mais l'EC2 app **éphémère est détruite** → IP de `rendu.txt` périmée. **Re-déployer juste avant le rendu** (cf. §9) |
+| 2. Application accessible via l'URL | ✅ | Déploiement frais du 05/07/2026 — étape `Validate` : `api=200 web=200` dès le 1er essai. Frontend `http://15.224.100.97:3000` · API `http://15.224.100.97:8000/docs` — IP à jour dans `rendu.txt` |
 | 3. Qualité du code : découpage clair | ✅ | `registry/` `infra/` `ansible/` `.github/` — `README.md:32-38` |
 
 ### §8 — Livrables
 
 | Exigence | Statut | Ce qu'on a fait & où (preuve) |
 | --- | :--: | --- |
-| `rendu.txt` (repo + IP app + IP registre) | ✅ | `rendu.txt:5-7` — ⚠️ IP app à rafraîchir au dernier déploiement (lié au critère 2) |
+| `rendu.txt` (repo + IP app + IP registre) | ✅ | `rendu.txt:5-7` — IP applicative à jour (`15.224.100.97`, déploiement 05/07/2026) |
 | Documentation globale d'architecture | ✅ | `docs/architecture/README.md`, ce compte-rendu, diagramme 03 |
 | `.env.sample` (secrets + user/pass registre) | ✅ | 11 secrets + `REGISTRY_USERNAME/PASSWORD` — `.env.sample` |
 | Aucune clé AWS réelle livrée | ✅ | Placeholders only ; historique git vérifié (0 clé `AKIA`/`BEGIN PRIVATE KEY`) |
@@ -179,9 +179,9 @@ Chaque exigence du sujet (§2 → §8) a été **auditée contre le code réel**
 - **🟡 R3 — AMI épinglée sur 24.04.** Choix volontaire de **reproductibilité** (un build figé
   reste rejouable à l'identique). Pour suivre automatiquement la prochaine LTS, élargir le filtre
   et trier sur la date de publication — au prix d'un comportement non déterministe.
-- **🟡 R32 / R34 — IP applicative périmée.** L'infra app étant éphémère, **relancer le pipeline
-  juste avant la soumission** et reporter l'IP fraîche affichée par l'étape `Validate` dans
-  `rendu.txt`. C'est l'étape finale de mise au propre du rendu.
+- **✅ R32 / R34 — IP applicative rafraîchie.** Pipeline relancé le 05/07/2026 (run #6), étape
+  `Validate` confirmée verte (`api=200 web=200` au 1er essai). IP `15.224.100.97` reportée dans
+  `rendu.txt`. Rendu finalisé.
 
 **Améliorations de fond (au-delà du barème) :**
 

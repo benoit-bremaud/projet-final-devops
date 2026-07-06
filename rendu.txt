@@ -1,10 +1,13 @@
 PROJET FINAL DEVOPS — ZERO TOUCH
 ================================
-(À compléter en fin de projet — issue #17)
 
 Dépôt GitHub        : https://github.com/benoit-bremaud/projet-final-devops
 IP publique projet  : http://13.39.19.174:3000   (Frontend)   /   http://13.39.19.174:8000   (API)
+                      /!\ IP EPHEMERE : rafraichir avec l'IP affichee dans le STEP_SUMMARY
+                      du dernier run "Deploy (Zero Touch)", juste avant de rendre.
 IP publique registre: https://35.180.156.19
 
-Identifiants registre Docker : voir .env.sample (REGISTRY_USERNAME / REGISTRY_PASSWORD)
+Identifiants registre Docker : admin:admin123
+                      (user = admin, mot de passe = admin123 — defaut labo documente,
+                       fige par le htpasswd du registre ; cf. .env.sample REGISTRY_*)
 Documentation d'architecture : DOC_ARCHITECTURE.md

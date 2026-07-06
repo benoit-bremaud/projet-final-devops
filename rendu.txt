@@ -2,7 +2,7 @@ PROJET FINAL DEVOPS — ZERO TOUCH
 ================================
 
 Dépôt GitHub        : https://github.com/benoit-bremaud/projet-final-devops
-IP publique projet  : http://:3000   (Frontend)   /   http://:8000   (API)
+IP publique projet  : http://13.39.82.19:3000   (Frontend)   /   http://13.39.82.19:8000   (API)
                       /!\ IP EPHEMERE : rafraichir avec l'IP affichee dans le STEP_SUMMARY
                       du dernier run "Deploy (Zero Touch)", juste avant de rendre.
 IP publique registre: https://35.180.156.19

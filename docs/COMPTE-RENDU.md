@@ -155,7 +155,7 @@ Chaque exigence du sujet (§2 → §8) a été **auditée contre le code réel**
 
 | Critère | Statut | Ce qu'on a fait & où (preuve) |
 | --- | :--: | --- |
-| 1. Pipeline vert de bout en bout | ✅ | Runs `success` (`workflow_dispatch`), dernier 24/06 en 5 min 32 s |
+| 1. Pipeline vert de bout en bout | ✅ | Runs `success` (`workflow_dispatch`), dernier 05/07 en 5 min 02 s |
 | 2. Application accessible via l'URL | 🟡 | Mécanisme en place (étape `Validate` + URL dans `STEP_SUMMARY`) mais l'EC2 app **éphémère est détruite** → IP de `rendu.txt` périmée. **Re-déployer juste avant le rendu** (cf. §9) |
 | 3. Qualité du code : découpage clair | ✅ | `registry/` `infra/` `ansible/` `.github/` — `README.md:32-38` |
 

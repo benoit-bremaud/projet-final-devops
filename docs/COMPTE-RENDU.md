@@ -155,15 +155,15 @@ Chaque exigence du sujet (§2 → §8) a été **auditée contre le code réel**
 
 | Critère | Statut | Ce qu'on a fait & où (preuve) |
 | --- | :--: | --- |
-| 1. Pipeline vert de bout en bout | ✅ | Runs `success` (`workflow_dispatch`), dernier 05/07 en 5 min 02 s |
-| 2. Application accessible via l'URL | 🟡 | Mécanisme en place (étape `Validate` + URL dans `STEP_SUMMARY`) mais l'EC2 app **éphémère est détruite** → IP de `rendu.txt` périmée. **Re-déployer juste avant le rendu** (cf. §9) |
+| 1. Pipeline vert de bout en bout | ✅ | Runs `success` (`workflow_dispatch`), dernier 07/07 en 4 min 31 s |
+| 2. Application accessible via l'URL | ✅ | Déployée et accessible — Frontend `:3000`, API `:8000/docs` et registre HTTPS vérifiés **HTTP 200** le 07/07 ; URL dans `rendu.txt` et `STEP_SUMMARY`. Infra éphémère : relancer le pipeline avant soumission (cf. §9) |
 | 3. Qualité du code : découpage clair | ✅ | `registry/` `infra/` `ansible/` `.github/` — `README.md:32-38` |
 
 ### §8 — Livrables
 
 | Exigence | Statut | Ce qu'on a fait & où (preuve) |
 | --- | :--: | --- |
-| `rendu.txt` (repo + IP app + IP registre) | ✅ | `rendu.txt:5-7` — ⚠️ IP app à rafraîchir au dernier déploiement (lié au critère 2) |
+| `rendu.txt` (repo + IP app + IP registre) | ✅ | `rendu.txt:5-8` — IP app + registre à jour du dernier déploiement (07/07) |
 | Documentation globale d'architecture | ✅ | `docs/architecture/README.md`, ce compte-rendu, diagramme 03 |
 | `.env.sample` (secrets + user/pass registre) | ✅ | 11 secrets + `REGISTRY_USERNAME/PASSWORD` — `.env.sample` |
 | Aucune clé AWS réelle livrée | ✅ | Placeholders only ; historique git vérifié (0 clé `AKIA`/`BEGIN PRIVATE KEY`) |
